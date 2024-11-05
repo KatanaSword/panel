@@ -3,13 +3,27 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "main": "index.ts",
   "scripts": {
-    "dev": ""
+    "dev": "nodemon -r dotenv/config src/index.ts"
   },
   "dependencies": {
-    "express": "^4.21.1"
+    "cloudinary": "^2.5.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "mongoose": "^8.8.0",
+    "multer": "^1.4.5-lts.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.7"
+    "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.17",
+    "@types/mongoose": "^5.11.96",
+    "@types/node": "^22.9.0",
+    "nodemon": "^3.1.7",
+    "prettier": "^3.3.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
   }
 }
