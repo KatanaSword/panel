@@ -17,7 +17,9 @@ app.use(express.static("public"));
 app.use(cookieParser());
 
 // Import router
+import userRouter from "./routers/user.router.ts";
 
 // Declear router
+app.use("api/v1/users", userRouter);
 
 export { app };
