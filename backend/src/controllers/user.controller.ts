@@ -6,6 +6,7 @@ import { Request, Response } from "express";
 import { options, userRole } from "../constants.ts";
 import {
   accountDetailUpdateSchema,
+  changePasswordSchema,
   signInUserSchema,
   updateProfileImageSchema,
   userRegisterSchema,
@@ -238,6 +239,33 @@ const updateProfileImage = asyncHandler(async (req: Request, res: Response) => {
   }
 });
 
+const changePassword = asyncHandler(async (req: Request, res: Response) => {
+  const parserData = changePasswordSchema.safeParse(req.body);
+  const errorMessage = parserData.error?.issues.map((issue) => issue.message);
+  if (!parserData.success) {
+    throw new ApiError(400, "Field is empty", errorMessage);
+  }
+
+  const user = await User.findById(req.user?._id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const isPasswordCorrect = await user.isPasswordValid(
+    parserData.data.currentPassword
+  );
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "User password invalid");
+  }
+
+  user.password = parserData.data.newPassword;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "User password change successfully"));
+});
+
 export {
   userRegister,
   signInUser,
@@ -246,4 +274,5 @@ export {
   accountDetailUpdate,
   refreshAccessToken,
   updateProfileImage,
+  changePassword,
 };
