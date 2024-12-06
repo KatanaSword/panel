@@ -20,22 +20,12 @@ const userRegisterSchema = z.object({
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
       { message: "Invalid password" }
     ),
-  role: z.enum(["USER", "ADMIN"]),
+  role: z.enum(["USER", "ADMIN"]).optional(),
 });
 
 const signInUserSchema = z.object({
-  email: z
-    .string()
-    .toLowerCase()
-    .trim()
-    .email({ message: "Invalid email" })
-    .optional(),
-  phoneNumber: z
-    .string()
-    .trim()
-    .min(12, { message: "Phone number must be 10 digit" })
-    .max(14, { message: "Phone number must be 10 digit" })
-    .optional(),
+  email: z.string().email().optional(),
+  phoneNumber: z.string().optional(),
   password: z.string(),
 });
 
@@ -51,9 +41,21 @@ const updateProfileImageSchema = z.object({
   }),
 });
 
+const changePasswordSchema = z.object({
+  currentPassword: z.string(),
+  newPassword: z
+    .string()
+    .min(8, { message: "Password must be at least 8 characters long" })
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      { message: "Invalid password" }
+    ),
+});
+
 export {
   userRegisterSchema,
   signInUserSchema,
   accountDetailUpdateSchema,
   updateProfileImageSchema,
+  changePasswordSchema,
 };
