@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.ts";
 import { ApiResponse } from "../utils/ApiResponse.ts";
 import { asyncHandler } from "../utils/asyncHandler.ts";
 import { Request, Response } from "express";
-import { options } from "../constants.ts";
+import { options, userRole } from "../constants.ts";
 import {
   accountDetailUpdateSchema,
   signInUserSchema,
@@ -11,7 +11,6 @@ import {
   userRegisterSchema,
 } from "../validations/schemas/userSchema.ts";
 import jwt from "jsonwebtoken";
-import { IUser } from "../type.ts";
 
 const generateAccessRefreshToken = async (
   userId: string
@@ -21,8 +20,8 @@ const generateAccessRefreshToken = async (
     const accessToken: string = user?.generateAccessToken();
     const refreshToken: string = user?.generateRefreshToken();
 
-    await user?.save({ validateBeforeSave: false });
     user!.refreshToken = refreshToken;
+    await user?.save({ validateBeforeSave: false });
 
     return { accessToken, refreshToken };
   } catch (error) {
@@ -35,17 +34,16 @@ const generateAccessRefreshToken = async (
 
 const userRegister = asyncHandler(async (req: Request, res: Response) => {
   const parserData = userRegisterSchema.safeParse(req.body);
+  const errorMessage = parserData.error?.issues.map((issue) => issue.message);
   if (!parserData.success) {
-    throw new ApiError(400, "Fields are empty");
+    throw new ApiError(400, "Fields is empty", errorMessage);
   }
 
   const userExist = await User.findOne({
     $or: [
-      {
-        username: parserData.data.username,
-        email: parserData.data.email,
-        phoneNumber: parserData.data.phoneNumber,
-      },
+      { username: parserData.data.username },
+      { email: parserData.data.email },
+      { phoneNumber: parserData.data.phoneNumber },
     ],
   });
   if (userExist) {
@@ -57,7 +55,7 @@ const userRegister = asyncHandler(async (req: Request, res: Response) => {
     email: parserData.data.email,
     phoneNumber: parserData.data.phoneNumber,
     password: parserData.data.password,
-    role: parserData.data.role || "USER",
+    role: parserData.data.role || userRole.USER,
   });
   if (!user) {
     throw new ApiError(500, "User not created due to an internal server error");
@@ -85,10 +83,8 @@ const signInUser = asyncHandler(async (req: Request, res: Response) => {
 
   const user = await User.findOne({
     $or: [
-      {
-        email: parserData.data.email,
-        phoneNumber: parserData.data.phoneNumber,
-      },
+      { email: parserData.data.email },
+      { phoneNumber: parserData.data.phoneNumber },
     ],
   });
   if (!user) {
@@ -102,7 +98,7 @@ const signInUser = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(400, "User password invalid");
   }
 
-  const { refreshToken, accessToken } = await generateAccessRefreshToken(
+  const { accessToken, refreshToken } = await generateAccessRefreshToken(
     user?._id
   );
 
@@ -115,13 +111,13 @@ const signInUser = asyncHandler(async (req: Request, res: Response) => {
 
   return res
     .status(200)
-    .cookie("refreshToken", refreshToken, options)
     .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
     .json(
       new ApiResponse(
         200,
-        { user: signedInUser, refreshToken, accessToken },
-        "User successfully sign in"
+        { user: signedInUser, accessToken, refreshToken },
+        "User sign in successfully"
       )
     );
 });
@@ -135,7 +131,6 @@ const signOutUser = asyncHandler(async (req: Request, res: Response) => {
       },
       { new: true }
     );
-
     return res
       .status(200)
       .clearCookie("refreshToken", options)
@@ -162,19 +157,17 @@ const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
 const accountDetailUpdate = asyncHandler(
   async (req: Request, res: Response) => {
     const parserData = accountDetailUpdateSchema.safeParse(req.body);
-    if (!parserData.success) {
-      throw new ApiError(400, "Field is empty");
-    }
+
     const accountUpdate = await User.findByIdAndUpdate(
       req.user?._id,
       {
         $set: {
-          firstName: parserData.data.firstName,
-          lastName: parserData.data.lastName,
+          firstName: parserData.data?.firstName,
+          lastName: parserData.data?.lastName,
         },
       },
       { new: true }
-    );
+    ).select("-password -refreshToken");
     if (!accountUpdate) {
       throw new ApiError(
         500,
@@ -190,7 +183,7 @@ const accountDetailUpdate = asyncHandler(
 
 const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
   try {
-    const incomingRefreshToken: string =
+    const incomingRefreshToken: string | undefined =
       req.cookies?.refreshToken || req.body?.refreshToken;
     if (!incomingRefreshToken) {
       throw new ApiError(401, "Missing or invalid refresh token");
@@ -198,17 +191,15 @@ const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
 
     const decodedToken = jwt.verify(
       incomingRefreshToken,
-      process.env.REFRESH_TOKEN_SECRET!
+      process.env.REFRESH_TOKEN_SECURE!
     );
 
-    const user = await User.findById(decodedToken?._id).select(
-      "-password -refreshToken"
-    );
+    const user = await User.findById(decodedToken?._id);
     if (!user) {
       throw new ApiError(401, "Missing or invalid refresh token");
     }
 
-    if (incomingRefreshToken !== user?.refreshToken) {
+    if (incomingRefreshToken !== user.refreshToken) {
       throw new ApiError(
         401,
         "Refresh token mismatch. Please reauthenticate to obtain a new access token"
