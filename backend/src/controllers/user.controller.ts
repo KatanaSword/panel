@@ -3,12 +3,14 @@ import { ApiError } from "../utils/ApiError.ts";
 import { ApiResponse } from "../utils/ApiResponse.ts";
 import { asyncHandler } from "../utils/asyncHandler.ts";
 import { Request, Response } from "express";
-import { options, userRole } from "../constants.ts";
+import { options, userRoleEnum } from "../constants.ts";
 import {
   accountDetailUpdateSchema,
+  assignRoleSchema,
   changePasswordSchema,
   signInUserSchema,
   updateProfileImageSchema,
+  mongodbUserIdSchema,
   userRegisterSchema,
 } from "../validations/schemas/userSchema.ts";
 import jwt from "jsonwebtoken";
@@ -56,7 +58,7 @@ const userRegister = asyncHandler(async (req: Request, res: Response) => {
     email: parserData.data.email,
     phoneNumber: parserData.data.phoneNumber,
     password: parserData.data.password,
-    role: parserData.data.role || userRole.USER,
+    role: parserData.data.role || userRoleEnum,
   });
   if (!user) {
     throw new ApiError(500, "User not created due to an internal server error");
@@ -266,6 +268,28 @@ const changePassword = asyncHandler(async (req: Request, res: Response) => {
     .json(new ApiResponse(200, {}, "User password change successfully"));
 });
 
+const assignRole = asyncHandler(async (req: Request, res: Response) => {
+  const parserData = assignRoleSchema.safeParse(req.body);
+  const parserId = mongodbUserIdSchema.safeParse(req.params);
+  console.log(`"role2: ${parserData}\nuserId: ${parserId}`);
+  if (!parserData.success && !parserId.success) {
+    throw new ApiError(400, "Field is empty");
+  }
+
+  const user = await User.findById(parserId.data?.userId);
+  console.log("user:", user);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  console.log("UserRole:", (user.role = parserData.data?.role));
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Assign user role successfully"));
+});
+
 export {
   userRegister,
   signInUser,
@@ -275,4 +299,5 @@ export {
   refreshAccessToken,
   updateProfileImage,
   changePassword,
+  assignRole,
 };
