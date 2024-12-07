@@ -52,10 +52,20 @@ const changePasswordSchema = z.object({
     ),
 });
 
+const assignRoleSchema = z.object({
+  role: z.enum(["USER", "ADMIN"]),
+});
+
+const mongodbUserIdSchema = z.object({
+  userId: z.string(),
+});
+
 export {
   userRegisterSchema,
   signInUserSchema,
   accountDetailUpdateSchema,
   updateProfileImageSchema,
   changePasswordSchema,
+  assignRoleSchema,
+  mongodbUserIdSchema,
 };
