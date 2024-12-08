@@ -12,8 +12,12 @@ import {
   updateProfileImageSchema,
   mongodbUserIdSchema,
   userRegisterSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  tokenSchema,
 } from "../validations/schemas/userSchema.ts";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 const generateAccessRefreshToken = async (
   userId: string
@@ -290,6 +294,143 @@ const assignRole = asyncHandler(async (req: Request, res: Response) => {
     .json(new ApiResponse(200, {}, "Assign user role successfully"));
 });
 
+const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+  const parserData = forgotPasswordSchema.safeParse(req.body);
+  const errorMessage = parserData.error?.issues.map((issue) => issue.message);
+  if (!parserData.success) {
+    throw new ApiError(400, "Field is empty", errorMessage);
+  }
+
+  const user = await User.findOne({ password: parserData.data.email });
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const { unHashedToken, hashedToken, tokenExpiry } =
+    user?.generateTemporaryToken();
+
+  user.forgotPasswordToken = hashedToken;
+  user.forgotPasswordExpiry = tokenExpiry;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        {},
+        "Email sent on your email Id. Please check your inbox for further instructions"
+      )
+    );
+});
+
+const resetPassword = asyncHandler(async (req: Request, res: Response) => {
+  const parserData = resetPasswordSchema.safeParse(req.body);
+  const parserToken = tokenSchema.safeParse(req.params);
+  const errorMessage = parserData.error?.issues.map((issue) => issue.message);
+  if (!parserData.success) {
+    throw new ApiError(400, "Field is empty", errorMessage);
+  }
+  if (!parserToken.success) {
+    throw new ApiError(
+      401,
+      "Reset token is missing or empty. Please provide a valid token"
+    );
+  }
+
+  let hashedToken: string = crypto
+    .createHash("sha256")
+    .update(parserToken.data.token)
+    .digest("hex");
+
+  const user = await User.findOne({
+    forgotPasswordToken: hashedToken,
+    forgotPasswordExpiry: { $gt: Date.now() },
+  });
+  if (!user) {
+    throw new ApiError(
+      489,
+      "Token mismatch or expire, Please request a new token"
+    );
+  }
+
+  user.forgotPasswordToken = undefined;
+  user.forgotPasswordExpiry = undefined;
+
+  user.password = parserData.data.resetPassword;
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Reset password successfully"));
+});
+
+const verifyUserEmailRequest = asyncHandler(
+  async (req: Request, res: Response) => {
+    const user = await User.findOne(req.user?._id);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    if (user.isEmailVerified) {
+      throw new ApiError(409, "Email already verified!");
+    }
+
+    const { unHashedToken, hashedToken, tokenExpiry } =
+      user.generateTemporaryToken();
+
+    user.emailVerificationToken = hashedToken;
+    user.emailVerificationExpiry = tokenExpiry;
+    await user.save({ validateBeforeSave: false });
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          {},
+          "Email sent on your email Id. Please check your inbox for further instructions"
+        )
+      );
+  }
+);
+
+const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
+  const parserToken = tokenSchema.safeParse(req.params);
+  if (!parserToken.success) {
+    throw new ApiError(
+      401,
+      "Verify token is missing or empty. Please provide a valid token"
+    );
+  }
+
+  let hashedToken = crypto
+    .createHash("sha256")
+    .update(parserToken.data.token)
+    .digest("hex");
+
+  const user = await User.findOne({
+    emailVerificationToken: hashedToken,
+    emailVerificationExpiry: { $gt: Date.now() },
+  });
+
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpiry = undefined;
+
+  user.isEmailVerified = true;
+  await user?.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { isEmailVerified: true },
+        "Verify email successfully"
+      )
+    );
+});
+
 export {
   userRegister,
   signInUser,
@@ -300,4 +441,7 @@ export {
   updateProfileImage,
   changePassword,
   assignRole,
+  forgotPassword,
+  resetPassword,
+  verifyEmail,
 };
