@@ -56,6 +56,24 @@ const assignRoleSchema = z.object({
   role: z.enum(["USER", "ADMIN"]),
 });
 
+const resetPasswordSchema = z.object({
+  resetPassword: z
+    .string()
+    .min(8, { message: "Password must be at least 8 characters long" })
+    .regex(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      { message: "Invalid password" }
+    ),
+});
+
+const tokenSchema = z.object({
+  token: z.string(),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email({ message: "Invalid email" }),
+});
+
 const mongodbUserIdSchema = z.object({
   userId: z.string(),
 });
@@ -68,4 +86,7 @@ export {
   changePasswordSchema,
   assignRoleSchema,
   mongodbUserIdSchema,
+  resetPasswordSchema,
+  tokenSchema,
+  forgotPasswordSchema,
 };
