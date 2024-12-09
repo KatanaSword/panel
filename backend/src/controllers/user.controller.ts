@@ -18,6 +18,11 @@ import {
 } from "../validations/schemas/userSchema.ts";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import {
+  forgotPasswordEmail,
+  verifyUserEmailEmail,
+  sendEmail,
+} from "../utils/mail.ts";
 
 const generateAccessRefreshToken = async (
   userId: string
@@ -27,7 +32,8 @@ const generateAccessRefreshToken = async (
     const accessToken: string = user?.generateAccessToken();
     const refreshToken: string = user?.generateRefreshToken();
 
-    user!.refreshToken = refreshToken;
+    // save refresh token in user document
+    user.refreshToken = refreshToken;
     await user?.save({ validateBeforeSave: false });
 
     return { accessToken, refreshToken };
@@ -313,6 +319,15 @@ const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
   user.forgotPasswordExpiry = tokenExpiry;
   await user.save({ validateBeforeSave: false });
 
+  await sendEmail({
+    email: user.email,
+    subject: "Reset password",
+    mailgenContent: forgotPasswordEmail(
+      user.username,
+      `${process.env.FORGOT_PASSWORD_REDIRECT_URL}/${unHashedToken}`
+    ),
+  });
+
   return res
     .status(200)
     .json(
@@ -383,6 +398,15 @@ const verifyUserEmailRequest = asyncHandler(
     user.emailVerificationExpiry = tokenExpiry;
     await user.save({ validateBeforeSave: false });
 
+    await sendEmail({
+      email: user.email,
+      subject: "Email verify",
+      mailgenContent: verifyUserEmailEmail(
+        user.username,
+        `${req.protocol}://${req.get("host")}/api/v1/users/verify_email/${unHashedToken}`
+      ),
+    });
+
     return res
       .status(200)
       .json(
@@ -444,4 +468,5 @@ export {
   forgotPassword,
   resetPassword,
   verifyEmail,
+  verifyUserEmailRequest,
 };
