@@ -1,9 +1,4 @@
-type TextProps = {
-  children: string;
-  className?: string;
-  size?: string | number;
-  as?: "span" | "p";
-};
+import { TextProps } from "@/type";
 
 const sizeClassess = {};
 

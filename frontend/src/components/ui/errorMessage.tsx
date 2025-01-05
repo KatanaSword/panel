@@ -1,10 +1,7 @@
-type ErrorMessageProps = {
-  className?: string;
-  errors: string | string[];
-};
+import { ErrorMessageProps } from "@/type";
 
 const ErrorMessage: React.FC<ErrorMessageProps> = ({ className, errors }) => {
-  return <div className={`${className}`}>{errors}</div>;
+  return errors?.length > 0 && <div className={`${className}`}>{errors}</div>;
 };
 
 export { ErrorMessage };
