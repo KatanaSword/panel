@@ -9,9 +9,9 @@ const connectDB = async () => {
         ssl: true
       }
     })
-    console.log(`\n MongoDB connected !! DB Host: ${connectionInstance}`)
+    console.log(`\n PostgreSQL connected !! DB Host: ${connectionInstance}`)
   } catch (error) {
-    console.log("MongoDB connection failed!", error);
+    console.log("PostgreSQL connection failed!", error);
     process.exit(1);
   }
 };
