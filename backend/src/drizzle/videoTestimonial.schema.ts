@@ -14,8 +14,8 @@ export const videoTestimonials = table("video_testimonials", {
     ownerId: t.integer("owner_id").notNull().references(() => users.id),
     ...timestamp
 }, (table) => {
-    return [
-        t.uniqueIndex("slug_idx").on(table.slug),
-        t.index("name_idx").on(table.name)
-    ]
+    return [{
+        slugIndex: t.uniqueIndex("slug_idx").on(table.slug),
+        nameIndex: t.index("name_idx").on(table.name)
+    }]
 })

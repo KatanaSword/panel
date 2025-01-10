@@ -1,6 +1,6 @@
 import { pgTable as table } from "drizzle-orm/pg-core";
 import * as t from "drizzle-orm/pg-core"
-import { availableUserRoleEnum } from "../utils/helpers";
+import { availableUserRolesEnum } from "../utils/helpers";
 import { timestamp } from "../utils/helpers"
 
 export const users = table("users", {
@@ -10,7 +10,7 @@ export const users = table("users", {
     email: t.varchar("email").unique().notNull(),
     phoneNumber: t.varchar("phone_number").unique(),
     avatar: t.varchar("avatar").default(""),
-    role: availableUserRoleEnum().default("USER"),
+    role: availableUserRolesEnum().default("USER"),
     password: t.varchar("password").notNull(),
     refreshToken: t.varchar("refresh_token"),
     isEmailVerified: t.boolean("is_email_verified").default(false),
@@ -21,9 +21,9 @@ export const users = table("users", {
     ...timestamp
 }, 
     (table) => {
-        return [
-            t.uniqueIndex("email_idx").on(table.email),
-            t.uniqueIndex("username_idx").on(table.username),
-        ]
+        return [{
+            emailIndex: t.uniqueIndex("email_idx").on(table.email),
+            usernameIndex: t.uniqueIndex("username_idx").on(table.username)
+        }]
     }
 )
