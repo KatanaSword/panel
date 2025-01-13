@@ -1,21 +1,31 @@
 import { pgTable as table } from "drizzle-orm/pg-core";
 import * as t from 'drizzle-orm/pg-core'
 import { users } from "./user.schema";
-import { generateUniqueString, timestamp } from "../utils/helpers";
+import { timestamp } from "../utils/helpers";
+import { relations } from "drizzle-orm";
 
 export const videoTestimonials = table("video_testimonials", {
-    id: t.integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    slug: t.varchar("slug").$default(() => generateUniqueString(16)),
+    id: t.uuid("id").primaryKey().defaultRandom(),
     name: t.varchar("name", {length: 20}).notNull(),
     company: t.varchar("company", {length: 20}),
     avatar: t.varchar("avatar").default(""),
     socialLink: t.varchar("social_link"),
     video: t.varchar("video").notNull(),
-    ownerId: t.integer("owner_id").notNull().references(() => users.id),
+    ownerId: t.uuid("owner_id").references(() => users.id).notNull(),
     ...timestamp
 }, (table) => {
     return [{
-        slugIndex: t.uniqueIndex("slug_idx").on(table.slug),
         nameIndex: t.index("name_idx").on(table.name)
     }]
+})
+
+// Relation
+
+export const videoTestimonialTableRelation = relations(videoTestimonials, ({one}) => {
+    return {
+        user: one(users, {
+            fields: [videoTestimonials.ownerId],
+            references: [users.id]
+        }) 
+    }
 })
