@@ -1,23 +1,25 @@
 import { pgTable as table } from "drizzle-orm/pg-core";
 import * as t from "drizzle-orm/pg-core"
-import { availableUserRolesEnum } from "../utils/helpers";
 import { timestamp } from "../utils/helpers"
+import { relations } from "drizzle-orm";
+import { textTestimonials } from "./textTestimonial.schema";
+import { videoTestimonials } from "./videoTestimonial.schema";
 
 export const users = table("users", {
-    id: t.integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    fullName: t.varchar("full_name"),
-    username: t.varchar("user_name", {length: 15}).unique().notNull(),
-    email: t.varchar("email").unique().notNull(),
+    id: t.uuid("id").primaryKey().defaultRandom(),
+    fullName: t.varchar("full_name", {length: 255}),
+    username: t.varchar("username", {length: 15}).notNull(),
+    email: t.varchar("email", {length: 255}).notNull(),
     phoneNumber: t.varchar("phone_number").unique(),
     avatar: t.varchar("avatar").default(""),
-    role: availableUserRolesEnum().default("USER"),
-    password: t.varchar("password").notNull(),
+    role: t.varchar("role").$type<"USER" | "SUBSCRIBER" | "ADMIN">().default("USER"),
+    password: t.varchar("password", {length: 255}).notNull(),
     refreshToken: t.varchar("refresh_token"),
     isEmailVerified: t.boolean("is_email_verified").default(false),
     emailVerificationToken: t.varchar("email_verification_token"),
-    emailVerificationExpiry: t.time("email_verification_expiry").defaultNow(),
+    emailVerificationExpiry: t.time("email_verification_expiry"),
     forgotPasswordToken: t.varchar("forgot_password_token"),
-    forgotPasswordExpiry: t.time("forgot_password_expiry").defaultNow(),
+    forgotPasswordExpiry: t.time("forgot_password_expiry"),
     ...timestamp
 }, 
     (table) => {
@@ -25,5 +27,16 @@ export const users = table("users", {
             emailIndex: t.uniqueIndex("email_idx").on(table.email),
             usernameIndex: t.uniqueIndex("username_idx").on(table.username)
         }]
+    }
+)
+
+// Relation
+
+export const userTableRelations = relations(
+    users , ({ many }) => {
+        return {
+            textTestimonials: many(textTestimonials),
+            videoTestimonials: many(videoTestimonials)
+        }
     }
 )
