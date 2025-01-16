@@ -4,23 +4,51 @@ import { asyncHandler } from "../utils/asyncHandler";
 import { Request, Response } from "express";
 import { options } from "../constants";
 import jwt from "jsonwebtoken";
-import { userRegisterSchema } from "../validations/schemas/userSchema";
+import {
+  signInUserSchema,
+  userRegisterSchema,
+  accountDetailUpdateSchema,
+  changePasswordSchema,
+  assignRoleSchema,
+  userIdSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  tokenSchema,
+} from "../validations/schemas/userSchema";
 import db from "../db";
 import { users } from "../drizzle/user.schema";
-import { hashPassword } from "../utils/helpers";
-import * as x from "drizzle-orm"
+import {
+  hashPassword,
+  isPasswordValid,
+  generateAccessToken,
+  generateRefreshToken,
+  generateTemporaryToken,
+} from "../utils/helpers";
+import * as x from "drizzle-orm";
+import { JwtPayload } from "../type";
+import {
+  forgotPasswordEmailMailgen,
+  sendEmail,
+  verifyUserEmailMailgen,
+} from "../utils/mail";
+import crypto from "crypto";
 
-/*const generateAccessRefreshToken = async (
+const generateAccessRefreshToken = async (
   userId: string
 ): Promise<{ accessToken: string; refreshToken: string }> => {
   try {
-    const user = await User.findById(userId);
-    const accessToken: string = user?.generateAccessToken();
-    const refreshToken: string = user?.generateRefreshToken();
+    const user = await db.query.users.findFirst({
+      where: userId ? x.eq(users.id, userId) : undefined,
+    });
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    const accessToken = generateAccessToken();
+    const refreshToken = generateRefreshToken();
 
     // save refresh token in user document
     user.refreshToken = refreshToken;
-    await user?.save({ validateBeforeSave: false });
 
     return { accessToken, refreshToken };
   } catch (error) {
@@ -29,7 +57,7 @@ import * as x from "drizzle-orm"
       "An error occurred while generating tokens. Please try again later."
     );
   }
-};*/
+};
 
 const userRegister = asyncHandler(async (req: Request, res: Response) => {
   // await db.delete(users)
@@ -39,64 +67,90 @@ const userRegister = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(400, "Fields is empty", errorMessage);
   }
 
-  const userExist = await db.query.users.findMany({
-    columns: {
-      email: true,
-      username: true
-    },
-    where: x.or(x.eq(users.email, parserData.data.email), x.eq(users.username, parserData.data.username)) 
-  })
-  if (userExist.length > 0) {
+  const userExist = await db.query.users.findFirst({
+    where: x.or(
+      parserData.data.email
+        ? x.eq(users.email, parserData.data.email)
+        : undefined,
+      parserData.data.username
+        ? x.eq(users.username, parserData.data.username)
+        : undefined
+    ),
+  });
+  if (userExist) {
     throw new ApiError(409, "User already exists");
   }
 
-  const setPassword = await hashPassword(parserData.data.password) as string
-  if(!setPassword) {
-    throw new ApiError(400, "Password generation failed due to invalid input parameters")
+  const setPassword = (await hashPassword(parserData.data.password)) as string;
+  if (!setPassword) {
+    throw new ApiError(
+      400,
+      "Password generation failed due to invalid input parameters"
+    );
   }
 
-  const user = await db.insert(users).values({username: parserData.data.username, email: parserData.data.email, password: setPassword, role: parserData.data.role}).returning({id: users.id, username: users.username, email: users.email, role: users.role, avatar: users.avatar, isEmailVerified: users.isEmailVerified, created_at: users.created_at})
+  const user = await db
+    .insert(users)
+    .values({
+      username: parserData.data.username,
+      email: parserData.data.email,
+      password: setPassword,
+      role: parserData.data.role,
+    })
+    .returning({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      role: users.role,
+      avatar: users.avatar,
+      isEmailVerified: users.isEmailVerified,
+      created_at: users.created_at,
+    });
   if (!user) {
     throw new ApiError(500, "User not created due to an internal server error");
   }
 
   return res
     .status(201)
-    .json(
-      new ApiResponse(201, { user }, "User register successfully")
-    );
+    .json(new ApiResponse(201, { user }, "User register successfully"));
 });
 
-/*const signInUser = asyncHandler(async (req: Request, res: Response) => {
+const signInUser = asyncHandler(async (req: Request, res: Response) => {
   const parserData = signInUserSchema.safeParse(req.body);
   if (!parserData.success) {
     throw new ApiError(400, "Field is empty");
   }
 
-  const user = await User.findOne({
-    $or: [
-      { email: parserData.data.email },
-      { phoneNumber: parserData.data.phoneNumber },
-    ],
+  const user = await db.query.users.findFirst({
+    where: x.or(
+      parserData.data.email
+        ? x.eq(users.email, parserData.data.email)
+        : undefined,
+      parserData.data.username
+        ? x.eq(users.username, parserData.data.username)
+        : undefined
+    ),
   });
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
-  const isPasswordCorrect: boolean = await user.isPasswordValid(
-    parserData.data.password
-  );
+  const isPasswordCorrect = (await isPasswordValid(
+    parserData.data.password,
+    user.password
+  )) as boolean;
   if (!isPasswordCorrect) {
     throw new ApiError(400, "User password invalid");
   }
 
   const { accessToken, refreshToken } = await generateAccessRefreshToken(
-    user?._id
+    user.id
   );
 
-  const signedInUser = await User.findById(user._id).select(
-    "-password -refreshToken"
-  );
+  const signedInUser = await db.query.users.findFirst({
+    columns: { password: false },
+    where: user.id ? x.eq(users.id, user.id) : undefined,
+  });
   if (!signedInUser) {
     throw new ApiError(404, "User not found");
   }
@@ -116,13 +170,9 @@ const userRegister = asyncHandler(async (req: Request, res: Response) => {
 
 const signOutUser = asyncHandler(async (req: Request, res: Response) => {
   try {
-    await User.findByIdAndUpdate(
-      req.user?._id,
-      {
-        $unset: { refreshToken: 1 },
-      },
-      { new: true }
-    );
+    await db.query.users.findFirst({
+      where: req.user.id ? x.eq(users.id, req.user.id) : undefined,
+    });
     return res
       .status(200)
       .clearCookie("refreshToken", options)
@@ -149,17 +199,31 @@ const getCurrentUser = asyncHandler(async (req: Request, res: Response) => {
 const accountDetailUpdate = asyncHandler(
   async (req: Request, res: Response) => {
     const parserData = accountDetailUpdateSchema.safeParse(req.body);
+    const errorMessage = parserData.error?.issues.map((issue) => issue.message);
+    if (!parserData.success) {
+      throw new ApiError(400, "", errorMessage);
+    }
 
-    const accountUpdate = await User.findByIdAndUpdate(
-      req.user?._id,
-      {
-        $set: {
-          firstName: parserData.data?.firstName,
-          lastName: parserData.data?.lastName,
-        },
-      },
-      { new: true }
-    ).select("-password -refreshToken");
+    const accountUpdate = await db
+      .update(users)
+      .set({
+        fullName: parserData.data.fullName,
+        phoneNumber: parserData.data.phoneNumber,
+        updated_at: users.updated_at,
+      })
+      .where(x.eq(users.id, req.user.id))
+      .returning({
+        id: users.id,
+        username: users.username,
+        fullName: users.fullName,
+        email: users.email,
+        role: users.role,
+        avatar: users.avatar,
+        phoneNumber: users.phoneNumber,
+        isEmailVerified: users.isEmailVerified,
+        created_at: users.created_at,
+        updated_at: users.updated_at,
+      });
     if (!accountUpdate) {
       throw new ApiError(
         500,
@@ -175,7 +239,7 @@ const accountDetailUpdate = asyncHandler(
 
 const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
   try {
-    const incomingRefreshToken: string | undefined =
+    const incomingRefreshToken: string =
       req.cookies?.refreshToken || req.body?.refreshToken;
     if (!incomingRefreshToken) {
       throw new ApiError(401, "Missing or invalid refresh token");
@@ -184,9 +248,11 @@ const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
     const decodedToken = jwt.verify(
       incomingRefreshToken,
       process.env.REFRESH_TOKEN_SECURE!
-    );
+    ) as JwtPayload;
 
-    const user = await User.findById(decodedToken?._id);
+    const user = await db.query.users.findFirst({
+      where: decodedToken.id ? x.eq(users.id, decodedToken.id) : undefined,
+    });
     if (!user) {
       throw new ApiError(401, "Missing or invalid refresh token");
     }
@@ -199,7 +265,7 @@ const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
     }
 
     const { accessToken, refreshToken: newRefreshToken } =
-      await generateAccessRefreshToken(user?._id);
+      await generateAccessRefreshToken(user?.id);
 
     return res
       .status(200)
@@ -216,19 +282,16 @@ const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
         )
       );
   } catch (error) {
-    throw new ApiError(
-      401,
-      message?.error || "Refresh token missing or invalid"
-    );
+    throw new ApiError(401, "Refresh token missing or invalid");
   }
 });
 
-const updateProfileImage = asyncHandler(async (req: Request, res: Response) => {
+/*const updateProfileImage = asyncHandler(async (req: Request, res: Response) => {
   const parserData = updateProfileImageSchema.safeParse(req.body);
   if (!parserData.success) {
     throw new ApiError(400, "");
   }
-});
+});*/
 
 const changePassword = asyncHandler(async (req: Request, res: Response) => {
   const parserData = changePasswordSchema.safeParse(req.body);
@@ -237,20 +300,32 @@ const changePassword = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(400, "Field is empty", errorMessage);
   }
 
-  const user = await User.findById(req.user?._id);
+  const user = await db.query.users.findFirst({
+    where: req.user.id ? x.eq(users.id, req.user.id) : undefined,
+  });
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
-  const isPasswordCorrect = await user.isPasswordValid(
-    parserData.data.currentPassword
-  );
+  const isPasswordCorrect = (await isPasswordValid(
+    parserData.data.currentPassword,
+    user.password
+  )) as boolean;
   if (!isPasswordCorrect) {
     throw new ApiError(400, "User password invalid");
   }
 
-  user.password = parserData.data.newPassword;
-  await user.save({ validateBeforeSave: false });
+  const setNewPassword = (await hashPassword(
+    parserData.data.newPassword
+  )) as string;
+  if (!setNewPassword) {
+    throw new ApiError(
+      400,
+      "Password generation failed due to invalid input parameters"
+    );
+  }
+
+  user.password = setNewPassword;
 
   return res
     .status(200)
@@ -259,20 +334,24 @@ const changePassword = asyncHandler(async (req: Request, res: Response) => {
 
 const assignRole = asyncHandler(async (req: Request, res: Response) => {
   const parserData = assignRoleSchema.safeParse(req.body);
-  const parserId = mongodbUserIdSchema.safeParse(req.params);
-  console.log(`"role2: ${parserData}\nuserId: ${parserId}`);
-  if (!parserData.success && !parserId.success) {
+  const parserId = userIdSchema.safeParse(req.params);
+  if (!parserData.success) {
     throw new ApiError(400, "Field is empty");
   }
+  if (!parserId.success) {
+    throw new ApiError(400, "The userId field is missing or invalid");
+  }
 
-  const user = await User.findById(parserId.data?.userId);
-  console.log("user:", user);
+  const user = await db.query.users.findFirst({
+    where: parserId.data?.userId
+      ? x.eq(users.id, parserId.data?.userId)
+      : undefined,
+  });
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
-  console.log("UserRole:", (user.role = parserData.data?.role));
-  await user.save({ validateBeforeSave: false });
+  user.role = parserData.data.role;
 
   return res
     .status(200)
@@ -286,22 +365,24 @@ const forgotPassword = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(400, "Field is empty", errorMessage);
   }
 
-  const user = await User.findOne({ password: parserData.data.email });
+  const user = await db.query.users.findFirst({
+    where: parserData.data.email
+      ? x.eq(users.email, parserData.data.email)
+      : undefined,
+  });
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
-  const { unHashedToken, hashedToken, tokenExpiry } =
-    user?.generateTemporaryToken();
+  const { unHashedToken, hashedToken, tokenExpiry } = generateTemporaryToken();
 
   user.forgotPasswordToken = hashedToken;
   user.forgotPasswordExpiry = tokenExpiry;
-  await user.save({ validateBeforeSave: false });
 
   await sendEmail({
     email: user.email,
     subject: "Reset password",
-    mailgenContent: forgotPasswordEmail(
+    mailgenContent: forgotPasswordEmailMailgen(
       user.username,
       `${process.env.FORGOT_PASSWORD_REDIRECT_URL}/${unHashedToken}`
     ),
@@ -337,9 +418,11 @@ const resetPassword = asyncHandler(async (req: Request, res: Response) => {
     .update(parserToken.data.token)
     .digest("hex");
 
-  const user = await User.findOne({
-    forgotPasswordToken: hashedToken,
-    forgotPasswordExpiry: { $gt: Date.now() },
+  const user = await db.query.users.findFirst({
+    where: x.and(
+      hashedToken ? x.eq(users.forgotPasswordToken, hashedToken) : undefined,
+      new Date() ? x.gt(users.forgotPasswordExpiry, new Date()) : undefined
+    ),
   });
   if (!user) {
     throw new ApiError(
@@ -348,11 +431,10 @@ const resetPassword = asyncHandler(async (req: Request, res: Response) => {
     );
   }
 
-  user.forgotPasswordToken = undefined;
-  user.forgotPasswordExpiry = undefined;
+  user.forgotPasswordToken = null;
+  user.forgotPasswordExpiry = null;
 
   user.password = parserData.data.resetPassword;
-  await user.save({ validateBeforeSave: false });
 
   return res
     .status(200)
@@ -361,7 +443,9 @@ const resetPassword = asyncHandler(async (req: Request, res: Response) => {
 
 const verifyUserEmailRequest = asyncHandler(
   async (req: Request, res: Response) => {
-    const user = await User.findOne(req.user?._id);
+    const user = await db.query.users.findFirst({
+      where: x.eq(users.id, req.user?.id),
+    });
     if (!user) {
       throw new ApiError(404, "User not found");
     }
@@ -371,16 +455,15 @@ const verifyUserEmailRequest = asyncHandler(
     }
 
     const { unHashedToken, hashedToken, tokenExpiry } =
-      user.generateTemporaryToken();
+      generateTemporaryToken();
 
     user.emailVerificationToken = hashedToken;
     user.emailVerificationExpiry = tokenExpiry;
-    await user.save({ validateBeforeSave: false });
 
     await sendEmail({
       email: user.email,
       subject: "Email verify",
-      mailgenContent: verifyUserEmailEmail(
+      mailgenContent: verifyUserEmailMailgen(
         user.username,
         `${req.protocol}://${req.get("host")}/api/v1/users/verify_email/${unHashedToken}`
       ),
@@ -412,16 +495,23 @@ const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
     .update(parserToken.data.token)
     .digest("hex");
 
-  const user = await User.findOne({
-    emailVerificationToken: hashedToken,
-    emailVerificationExpiry: { $gt: Date.now() },
+  const user = await db.query.users.findFirst({
+    where: x.and(
+      x.eq(users.emailVerificationToken, hashedToken),
+      x.gt(users.emailVerificationExpiry, new Date())
+    ),
   });
+  if (!user) {
+    throw new ApiError(
+      489,
+      "Token mismatch or expire, Please request a new token"
+    );
+  }
 
-  user.emailVerificationToken = undefined;
-  user.emailVerificationExpiry = undefined;
+  user.emailVerificationToken = null;
+  user.emailVerificationExpiry = null;
 
   user.isEmailVerified = true;
-  await user?.save({ validateBeforeSave: false });
 
   return res
     .status(200)
@@ -432,20 +522,20 @@ const verifyEmail = asyncHandler(async (req: Request, res: Response) => {
         "Verify email successfully"
       )
     );
-});*/
+});
 
 export {
   userRegister,
-  /*signInUser,
+  signInUser,
   signOutUser,
   getCurrentUser,
   accountDetailUpdate,
   refreshAccessToken,
-  updateProfileImage,
+  // updateProfileImage,
   changePassword,
   assignRole,
   forgotPassword,
   resetPassword,
   verifyEmail,
-  verifyUserEmailRequest,*/
+  verifyUserEmailRequest,
 };
