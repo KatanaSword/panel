@@ -4,6 +4,7 @@ import {
   avatarSchema,
   createTextTestimonialSchema,
   textTestimonialIdSchema,
+  updateTextTestimonialSchema,
 } from "../validations/schemas/textTestimonial.schema";
 import { ApiError } from "../utils/ApiError";
 import db from "../db";
@@ -52,6 +53,9 @@ const createTextTestimonial = asyncHandler(
         socialLink: textTestimonials.socialLink,
         role: textTestimonials.role,
         ownerId: textTestimonials.ownerId,
+        created_at: textTestimonials.created_at,
+        updated_at: textTestimonials.updated_at,
+        deleted_at: textTestimonials.deleted_at,
       });
     if (!createTextTestimonial) {
       throw new ApiError(
@@ -80,7 +84,9 @@ const getTextTestimonialById = asyncHandler(
     }
 
     const textTestimonial = await db.query.textTestimonials.findFirst({
-      where: x.eq(textTestimonials.id, parserId.data.textTestimonialId),
+      where: parserId.data.textTestimonialId
+        ? x.eq(textTestimonials.id, parserId.data.textTestimonialId)
+        : undefined,
     });
     if (!textTestimonial) {
       throw new ApiError(404, "Text testimonial not found");
@@ -93,6 +99,63 @@ const getTextTestimonialById = asyncHandler(
           200,
           textTestimonial,
           "Text testimonial fetch successfully"
+        )
+      );
+  }
+);
+
+const updateTextTestimonial = asyncHandler(
+  async (req: Request, res: Response) => {
+    const parserData = updateTextTestimonialSchema.safeParse(req.body);
+    const parserId = textTestimonialIdSchema.safeParse(req.params);
+    const errorMessage = parserData.error?.issues.map((issue) => issue.message);
+    if (!parserData.success) {
+      throw new ApiError(400, "Field is empty", errorMessage);
+    }
+    if (!parserId.success) {
+      throw new ApiError(400, "Text testimonial id is missing");
+    }
+
+    const textTestimonial = await db
+      .update(textTestimonials)
+      .set({
+        fullName: parserData.data.fullName,
+        company: parserData.data.company,
+        testimonial: parserData.data.testimonial,
+        testimonialTitle: parserData.data.testimonialTitle,
+        socialLink: parserData.data.socialLink,
+        email: parserData.data.email,
+        role: parserData.data.role,
+      })
+      .where(x.eq(textTestimonials.id, parserId.data.textTestimonialId))
+      .returning({
+        id: textTestimonials.id,
+        fullName: textTestimonials.fullName,
+        company: textTestimonials.company,
+        testimonial: textTestimonials.testimonial,
+        testimonialTitle: textTestimonials.testimonialTitle,
+        avatar: textTestimonials.avatar,
+        socialLink: textTestimonials.socialLink,
+        email: textTestimonials.email,
+        role: textTestimonials.role,
+        created_at: textTestimonials.created_at,
+        updated_at: textTestimonials.updated_at,
+        deleted_at: textTestimonials.deleted_at,
+      });
+    if (!textTestimonial) {
+      throw new ApiError(
+        500,
+        "Text testimonial update fail due to an internal server error"
+      );
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          textTestimonial,
+          "Update text testimonial successfully"
         )
       );
   }
