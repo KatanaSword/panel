@@ -3,11 +3,13 @@ import { Request, Response } from "express";
 import {
   avatarSchema,
   createTextTestimonialSchema,
+  textTestimonialIdSchema,
 } from "../validations/schemas/textTestimonial.schema";
 import { ApiError } from "../utils/ApiError";
 import db from "../db";
 import { textTestimonials } from "../drizzle/textTestimonial.schema";
 import { ApiResponse } from "../utils/ApiResponse";
+import * as x from "drizzle-orm";
 
 const createTextTestimonial = asyncHandler(
   async (req: Request, res: Response) => {
@@ -69,3 +71,31 @@ const createTextTestimonial = asyncHandler(
       );
   }
 );
+
+const getTextTestimonialById = asyncHandler(
+  async (req: Request, res: Response) => {
+    const parserId = textTestimonialIdSchema.safeParse(req.params);
+    if (!parserId.success) {
+      throw new ApiError(400, "Text testimonial id is missing");
+    }
+
+    const textTestimonial = await db.query.textTestimonials.findFirst({
+      where: x.eq(textTestimonials.id, parserId.data.textTestimonialId),
+    });
+    if (!textTestimonial) {
+      throw new ApiError(404, "Text testimonial not found");
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          textTestimonial,
+          "Text testimonial fetch successfully"
+        )
+      );
+  }
+);
+
+export { createTextTestimonial, getTextTestimonialById };
