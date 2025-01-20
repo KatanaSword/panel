@@ -161,4 +161,56 @@ const updateTextTestimonial = asyncHandler(
   }
 );
 
-export { createTextTestimonial, getTextTestimonialById };
+const updateAvatar = asyncHandler(async (req: Request, res: Response) => {
+  const parserId = textTestimonialIdSchema.safeParse(req.params);
+  const imageLocalPath = avatarSchema.safeParse(req.file?.path);
+  if (!parserId.success) {
+    throw new ApiError(400, "The text testimonial id is missing or invalid");
+  }
+  if (!imageLocalPath.success) {
+    throw new ApiError(400, "Image path is missing");
+  }
+
+  const uploadImage = await uploadImageToS3(imageLocalPath, "", "");
+  if (!uploadImage) {
+    throw new ApiError(404, "Image is not found");
+  }
+
+  const textTestimonial = await db
+    .update(textTestimonials)
+    .set({
+      avatar: uploadImage,
+    })
+    .where(x.eq(textTestimonials.id, parserId.data.textTestimonialId))
+    .returning({
+      id: textTestimonials.id,
+      fullName: textTestimonials.fullName,
+      company: textTestimonials.company,
+      testimonial: textTestimonials.testimonial,
+      testimonialTitle: textTestimonials.testimonialTitle,
+      avatar: textTestimonials.avatar,
+      socialLink: textTestimonials.socialLink,
+      email: textTestimonials.email,
+      role: textTestimonials.role,
+      created_at: textTestimonials.created_at,
+      updated_at: textTestimonials.updated_at,
+      deleted_at: textTestimonials.deleted_at,
+    });
+  if (!textTestimonial) {
+    throw new ApiError(
+      500,
+      "Avatar is not update due to an internal server error"
+    );
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, textTestimonial, "Avatar update successfully"));
+});
+
+export {
+  createTextTestimonial,
+  getTextTestimonialById,
+  updateTextTestimonial,
+  updateAvatar,
+};
