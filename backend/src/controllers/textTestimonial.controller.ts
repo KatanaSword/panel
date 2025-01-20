@@ -12,6 +12,25 @@ import { textTestimonials } from "../drizzle/textTestimonial.schema";
 import { ApiResponse } from "../utils/ApiResponse";
 import * as x from "drizzle-orm";
 
+const getAllTextTestimonials = asyncHandler(
+  async (req: Request, res: Response) => {
+    const allTextTestimonials = await db.select().from(textTestimonials);
+    if (!allTextTestimonials) {
+      throw new ApiError(404, "Text testimonial not found");
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          allTextTestimonials,
+          "Fetch all text testimonial successfully"
+        )
+      );
+  }
+);
+
 const createTextTestimonial = asyncHandler(
   async (req: Request, res: Response) => {
     const parserData = createTextTestimonialSchema.safeParse(req.body);
@@ -233,6 +252,7 @@ const deleteTextTestimonial = asyncHandler(
 );
 
 export {
+  getAllTextTestimonials,
   createTextTestimonial,
   getTextTestimonialById,
   updateTextTestimonial,
