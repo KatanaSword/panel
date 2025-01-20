@@ -208,9 +208,34 @@ const updateAvatar = asyncHandler(async (req: Request, res: Response) => {
     .json(new ApiResponse(200, textTestimonial, "Avatar update successfully"));
 });
 
+const deleteTextTestimonial = asyncHandler(
+  async (req: Request, res: Response) => {
+    const parserId = textTestimonialIdSchema.safeParse(req.params);
+    if (!parserId.success) {
+      throw new ApiError(400, "The text testimonial id is missing");
+    }
+
+    const textTestimonial = await db
+      .delete(textTestimonials)
+      .where(x.eq(textTestimonials.id, parserId.data.textTestimonialId))
+      .returning();
+    if (!textTestimonial) {
+      throw new ApiError(
+        500,
+        "Text testimonial delete fail due to an internal server error"
+      );
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Delete text testimonial successfully"));
+  }
+);
+
 export {
   createTextTestimonial,
   getTextTestimonialById,
   updateTextTestimonial,
   updateAvatar,
+  deleteTextTestimonial,
 };
