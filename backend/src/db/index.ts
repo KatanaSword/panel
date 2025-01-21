@@ -1,19 +1,18 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle } from "drizzle-orm/node-postgres";
 import { DB_NAME } from "../constants.ts";
+import { users } from "../drizzle/user.schema";
+import { textTestimonials } from "../drizzle/textTestimonial.schema";
+import { videoTestimonials } from "../drizzle/videoTestimonial.schema";
+import { testimonialCollections } from "../drizzle/testimonialCollection.schema";
 
-const connectDB = async () => {
-  try {
-    const connectionInstance = drizzle({
-      connection: { 
-        connectionString: `${process.env.DATABASE_URL}/${DB_NAME}`,
-        ssl: true
-      }
-    })
-    console.log(`\n PostgreSQL connected !! DB Host: ${connectionInstance}`)
-  } catch (error) {
-    console.log("PostgreSQL connection failed!", error);
-    process.exit(1);
-  }
-};
+const db = drizzle(`${process.env.DATABASE_URL}/${DB_NAME}`, {
+  schema: {
+    users,
+    textTestimonials,
+    videoTestimonials,
+    testimonialCollections,
+  },
+  logger: true,
+});
 
-export default connectDB;
+export default db;
