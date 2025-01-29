@@ -1,4 +1,4 @@
-import z from "zod";
+import { z } from "zod";
 
 const userRegisterSchema = z.object({
   username: z
@@ -20,17 +20,18 @@ const userRegisterSchema = z.object({
 
 const signInUserSchema = z.object({
   email: z.string().email().optional(),
-  username: z.string().optional(),
+  username: z.string().toLowerCase().optional(),
   password: z.string(),
 });
 
 const accountDetailUpdateSchema = z.object({
   fullName: z.string().trim().optional(),
   phoneNumber: z
-  .string()
-  .trim()
-  .min(12, { message: "Phone number must be 10 digit" })
-  .max(14, { message: "Phone number must be 10 digit" }).optional(),
+    .string()
+    .trim()
+    .min(12, { message: "Phone number must be 10 digit" })
+    .max(14, { message: "Phone number must be 10 digit" })
+    .optional(),
 });
 
 const updateProfileImageSchema = z.object({
