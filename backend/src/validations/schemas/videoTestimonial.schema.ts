@@ -8,7 +8,6 @@ const createVideoTestimonialSchema = z.object({
   company: z
     .string()
     .max(50, { message: "Company can't be more than 50 characters long" }),
-  testimonial: z.string().url({ message: "Invalid url" }),
   socialLink: z
     .string()
     .regex(/https?:\/\/(www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(\/[^\s]*)?/, {
@@ -39,12 +38,16 @@ const updateVideoTestimonialSchema = z.object({
   role: z.enum([""]).optional(),
 });
 
+const testimonialSchema = z.object({
+  testimonial: z.string(),
+});
+
 const avatarSchema = z.object({
   avatar: z.string(),
 });
 
 const updateTestimonialSchema = z.object({
-  testimonial: z.string().url({ message: "Invalid url" }).optional(),
+  testimonial: z.string().optional(),
 });
 
 const videoTestimonialIdSchema = z.object({
@@ -54,6 +57,7 @@ const videoTestimonialIdSchema = z.object({
 export {
   createVideoTestimonialSchema,
   updateVideoTestimonialSchema,
+  testimonialSchema,
   avatarSchema,
   updateTestimonialSchema,
   videoTestimonialIdSchema,
