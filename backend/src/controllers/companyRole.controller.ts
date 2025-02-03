@@ -11,9 +11,16 @@ import * as x from "drizzle-orm";
 import { companyRoles } from "../drizzle/companyRole.schema";
 import { ApiResponse } from "../utils/ApiResponse";
 
-const getAllCompanyRoles = asyncHandler(
-  async (req: Request, res: Response) => {}
-);
+const getAllCompanyRoles = asyncHandler(async (req: Request, res: Response) => {
+  const getAllCompanyRoles = await db.select().from(companyRoles);
+  if (getAllCompanyRoles.length < 1) {
+    throw new ApiError(404, "Company roles not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, getAllCompanyRoles, "Fetch all company roles"));
+});
 
 const createCompanyRole = asyncHandler(async (req: Request, res: Response) => {
   const parserData = createCompanyRoleSchema.safeParse(req.body);
