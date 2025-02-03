@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import {
   companyRoleIdSchema,
   createCompanyRoleSchema,
+  updateCompanyRoleSchema,
 } from "../validations/schemas/companyRole.schema";
 import { ApiError } from "../utils/ApiError";
 import db from "../db";
@@ -82,9 +83,48 @@ const getCompanyRoleById = asyncHandler(async (req: Request, res: Response) => {
     .json(new ApiResponse(200, companyRole, "Fetch company role successfully"));
 });
 
-const updateCompanyRole = asyncHandler(
-  async (req: Request, res: Response) => {}
-);
+const updateCompanyRole = asyncHandler(async (req: Request, res: Response) => {
+  const parserData = updateCompanyRoleSchema.safeParse(req.body);
+  const parserId = companyRoleIdSchema.safeParse(req.params);
+  const errorMessage = parserData.error?.issues.map((issue) => issue.message);
+  if (!parserData.success) {
+    throw new ApiError(400, "Field is empty", errorMessage);
+  }
+  if (!parserId.success) {
+    throw new ApiError(400, "Company role id is missing or invalid");
+  }
+
+  const companyRole = await db
+    .update(companyRoles)
+    .set({
+      name: parserData.data.name,
+    })
+    .where(
+      parserData.data.name
+        ? x.eq(companyRoles.name, parserData.data.name)
+        : undefined
+    )
+    .returning({
+      id: companyRoles.id,
+      name: companyRoles.name,
+      ownerId: companyRoles.ownerId,
+      created_at: companyRoles.created_at,
+      updated_at: companyRoles.updated_at,
+      deleted_at: companyRoles.deleted_at,
+    });
+  if (!companyRole) {
+    throw new ApiError(
+      500,
+      "Company role not update due to an internal server error"
+    );
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, companyRole, "Update company role successfully")
+    );
+});
 
 const deleteCompanyRole = asyncHandler(
   async (req: Request, res: Response) => {}
