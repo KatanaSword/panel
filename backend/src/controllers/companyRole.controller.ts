@@ -37,14 +37,7 @@ const createCompanyRole = asyncHandler(async (req: Request, res: Response) => {
       name: parserData.data.name,
       ownerId: req.user.id,
     })
-    .returning({
-      id: companyRoles.id,
-      name: companyRoles.name,
-      ownerId: companyRoles.ownerId,
-      created_at: companyRoles.created_at,
-      updated_at: companyRoles.updated_at,
-      deleted_at: companyRoles.deleted_at,
-    });
+    .returning();
   if (!createCompanyRole) {
     throw new ApiError(
       500,
@@ -104,14 +97,7 @@ const updateCompanyRole = asyncHandler(async (req: Request, res: Response) => {
         ? x.eq(companyRoles.name, parserData.data.name)
         : undefined
     )
-    .returning({
-      id: companyRoles.id,
-      name: companyRoles.name,
-      ownerId: companyRoles.ownerId,
-      created_at: companyRoles.created_at,
-      updated_at: companyRoles.updated_at,
-      deleted_at: companyRoles.deleted_at,
-    });
+    .returning();
   if (!companyRole) {
     throw new ApiError(
       500,
@@ -126,9 +112,31 @@ const updateCompanyRole = asyncHandler(async (req: Request, res: Response) => {
     );
 });
 
-const deleteCompanyRole = asyncHandler(
-  async (req: Request, res: Response) => {}
-);
+const deleteCompanyRole = asyncHandler(async (req: Request, res: Response) => {
+  const parserId = companyRoleIdSchema.safeParse(req.params);
+  if (!parserId.success) {
+    throw new ApiError(400, "Company role id is missing or invalid");
+  }
+
+  const companyRole = await db
+    .delete(companyRoles)
+    .where(
+      parserId.data.companyRoleId
+        ? x.eq(companyRoles.id, parserId.data.companyRoleId)
+        : undefined
+    )
+    .returning();
+  if (!companyRole) {
+    throw new ApiError(
+      500,
+      "Company role not delete due to an internal server error"
+    );
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Delete company role successfully"));
+});
 
 export {
   getAllCompanyRoles,
