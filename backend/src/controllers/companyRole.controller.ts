@@ -1,6 +1,9 @@
 import { asyncHandler } from "../utils/asyncHandler";
 import { Request, Response } from "express";
-import { createCompanyRoleSchema } from "../validations/schemas/companyRole.schema";
+import {
+  companyRoleIdSchema,
+  createCompanyRoleSchema,
+} from "../validations/schemas/companyRole.schema";
 import { ApiError } from "../utils/ApiError";
 import db from "../db";
 import * as x from "drizzle-orm";
@@ -59,9 +62,25 @@ const createCompanyRole = asyncHandler(async (req: Request, res: Response) => {
     );
 });
 
-const getCompanyRoleById = asyncHandler(
-  async (req: Request, res: Response) => {}
-);
+const getCompanyRoleById = asyncHandler(async (req: Request, res: Response) => {
+  const parserId = companyRoleIdSchema.safeParse(req.params);
+  if (!parserId.success) {
+    throw new ApiError(400, "Company role id is missing or invalid");
+  }
+
+  const companyRole = await db.query.companyRoles.findFirst({
+    where: parserId.data.companyRoleId
+      ? x.eq(companyRoles.id, parserId.data.companyRoleId)
+      : undefined,
+  });
+  if (!companyRole) {
+    throw new ApiError(404, "Company role not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, companyRole, "Fetch company role successfully"));
+});
 
 const updateCompanyRole = asyncHandler(
   async (req: Request, res: Response) => {}
