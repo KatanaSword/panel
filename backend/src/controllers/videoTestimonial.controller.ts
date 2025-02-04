@@ -13,9 +13,18 @@ import { videoTestimonials } from "../drizzle/videoTestimonial.schema";
 import { ApiResponse } from "../utils/ApiResponse";
 import * as x from "drizzle-orm";
 
-const getAllVideoTestimonials = asyncHandler(
-  async (req: Request, res: Response) => {}
-);
+const getAllVideoTestimonials = asyncHandler(async (_, res: Response) => {
+  const allVideoTestimonials = await db.select().from(videoTestimonials);
+  if (allVideoTestimonials.length < 1) {
+    throw new ApiError(404, "Video testimonials not found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, allVideoTestimonials, "Fetch all video testimonials")
+    );
+});
 
 const createVideoTestimonial = asyncHandler(
   async (req: Request, res: Response) => {
