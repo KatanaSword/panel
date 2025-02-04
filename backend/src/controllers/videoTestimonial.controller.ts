@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import {
   avatarSchema,
   createVideoTestimonialSchema,
+  updateVideoTestimonialSchema,
   videoSchema,
   videoTestimonialIdSchema,
 } from "../validations/schemas/videoTestimonial.schema";
@@ -105,7 +106,53 @@ const getVideoTestimonialByCampanyRole = asyncHandler(
 );
 
 const updateVideoTestimonial = asyncHandler(
-  async (req: Request, res: Response) => {}
+  async (req: Request, res: Response) => {
+    const parserData = updateVideoTestimonialSchema.safeParse(req.body);
+    const parserId = videoTestimonialIdSchema.safeParse(req.params);
+    const errorMessage = parserData.error?.issues.map((issue) => issue.message);
+    if (!parserData.success) {
+      throw new ApiError(400, "Field is empty", errorMessage);
+    }
+    if (!parserId.success) {
+      throw new ApiError(400, "Video testimonial id is missing or invalid");
+    }
+
+    const videoTestimonial = await db.query.videoTestimonials.findFirst({
+      where: parserId.data.videoTestimonialId
+        ? x.eq(videoTestimonials.id, parserId.data.videoTestimonialId)
+        : undefined,
+    });
+    if (!videoTestimonial) {
+      throw new ApiError(404, "Video testimonial not found");
+    }
+
+    const updateVideoTestimonial = await db
+      .update(videoTestimonials)
+      .set({
+        fullName: parserData.data.fullName,
+        email: parserData.data.email,
+        company: parserData.data.company,
+        companyRole: parserData.data.companyRole,
+        socialLink: parserData.data.socialLink,
+      })
+      .returning();
+    if (!updateVideoTestimonial) {
+      throw new ApiError(
+        500,
+        "Video testimonial not update due to an internal server error"
+      );
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          updateVideoTestimonial,
+          "Update video testimonial successfully"
+        )
+      );
+  }
 );
 
 const updateVideoTestimonialAvatar = asyncHandler(
