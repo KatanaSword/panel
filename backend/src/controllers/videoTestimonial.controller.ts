@@ -156,7 +156,60 @@ const updateVideoTestimonial = asyncHandler(
 );
 
 const updateVideoTestimonialAvatar = asyncHandler(
-  async (req: Request, res: Response) => {}
+  async (req: Request, res: Response) => {
+    const imageLocalPath = avatarSchema.safeParse(req.file?.path);
+    const parserId = videoTestimonialIdSchema.safeParse(req.params);
+    if (!imageLocalPath.success) {
+      throw new ApiError(400, "Image file path is missing");
+    }
+    if (!parserId.success) {
+      throw new ApiError(400, "Video testimonial id is missing or invalid");
+    }
+
+    const videoTestimonial = await db.query.videoTestimonials.findFirst({
+      where: parserId.data.videoTestimonialId
+        ? x.eq(videoTestimonials.id, parserId.data.videoTestimonialId)
+        : undefined,
+    });
+    if (!videoTestimonial) {
+      throw new ApiError(404, "Video testimonial not found");
+    }
+
+    const uploadAvatar = await uploadFileToS3(
+      imageLocalPath.data.avatar,
+      "",
+      ""
+    );
+    if (!uploadAvatar) {
+      throw new ApiError(400, "Avatar fail to upload");
+    }
+
+    const updateVideoTestimonialAvatar = await db
+      .update(videoTestimonials)
+      .set({ avatar: uploadAvatar })
+      .where(
+        parserId.data.videoTestimonialId
+          ? x.eq(videoTestimonials.id, parserId.data.videoTestimonialId)
+          : undefined
+      )
+      .returning();
+    if (!updateVideoTestimonialAvatar) {
+      throw new ApiError(
+        500,
+        "Avatar not update due to an internal server error"
+      );
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          updateVideoTestimonialAvatar,
+          "Update avatar successfully"
+        )
+      );
+  }
 );
 
 const updateVideoTestimonialVideo = asyncHandler(
