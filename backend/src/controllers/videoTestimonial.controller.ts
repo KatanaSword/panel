@@ -266,7 +266,40 @@ const updateVideoTestimonialVideo = asyncHandler(
 );
 
 const deleteVideoTestimonial = asyncHandler(
-  async (req: Request, res: Response) => {}
+  async (req: Request, res: Response) => {
+    const parserId = videoTestimonialIdSchema.safeParse(req.params);
+    if (!parserId.success) {
+      throw new ApiError(400, "Video testimonial id is missing or invalid");
+    }
+
+    const videoTestimonial = await db.query.videoTestimonials.findFirst({
+      where: parserId.data.videoTestimonialId
+        ? x.eq(videoTestimonials.id, parserId.data.videoTestimonialId)
+        : undefined,
+    });
+    if (!videoTestimonial) {
+      throw new ApiError(404, "Video testimonial not found");
+    }
+
+    const deleteVideoTestimonial = await db
+      .delete(videoTestimonials)
+      .where(
+        parserId.data.videoTestimonialId
+          ? x.eq(videoTestimonials.id, parserId.data.videoTestimonialId)
+          : undefined
+      )
+      .returning();
+    if (!deleteVideoTestimonial) {
+      throw new ApiError(
+        500,
+        "Video testimonial not delete due to an internal server error"
+      );
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Delete video testimonial successfully"));
+  }
 );
 
 export {
