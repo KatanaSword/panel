@@ -12,6 +12,8 @@ import db from "../db";
 import { videoTestimonials } from "../drizzle/videoTestimonial.schema";
 import { ApiResponse } from "../utils/ApiResponse";
 import * as x from "drizzle-orm";
+import { companyRoleIdSchema } from "../validations/schemas/companyRole.schema";
+import { companyRoles } from "../drizzle/companyRole.schema";
 
 const getAllVideoTestimonials = asyncHandler(async (_, res: Response) => {
   const allVideoTestimonials = await db.select().from(videoTestimonials);
@@ -111,7 +113,50 @@ const getVideoTestimonialById = asyncHandler(
 );
 
 const getVideoTestimonialByCampanyRole = asyncHandler(
-  async (req: Request, res: Response) => {}
+  async (req: Request, res: Response) => {
+    const parserId = companyRoleIdSchema.safeParse(req.params);
+    if (!parserId.success) {
+      throw new ApiError(400, "Video testimonial id is missing or invalid");
+    }
+
+    const companyRole = await db.query.companyRoles.findFirst({
+      columns: {
+        id: true,
+        name: true,
+      },
+      where: parserId.data.companyRoleId
+        ? x.eq(companyRoles.id, parserId.data.companyRoleId)
+        : undefined,
+    });
+    if (!companyRole) {
+      throw new ApiError(404, "Company role not found");
+    }
+
+    const videoTestimonial = await db
+      .select()
+      .from(videoTestimonials)
+      .where(
+        parserId.data.companyRoleId
+          ? x.eq(videoTestimonials.id, parserId.data.companyRoleId)
+          : undefined
+      );
+    if (!videoTestimonial) {
+      throw new ApiError(
+        500,
+        "Video testimonial not fetch due to an internal server error"
+      );
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          videoTestimonial,
+          "Video testimonials fetch successfully"
+        )
+      );
+  }
 );
 
 const updateVideoTestimonial = asyncHandler(
