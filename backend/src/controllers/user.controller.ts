@@ -78,7 +78,7 @@ const userRegister = asyncHandler(async (req: Request, res: Response) => {
     ),
   });
   if (userExist) {
-    throw new ApiError(409, "User already exists");
+    throw new ApiError(409, "User already exist");
   }
 
   const setPassword = (await hashPassword(parserData.data.password)) as string;
@@ -441,7 +441,7 @@ const resetPassword = asyncHandler(async (req: Request, res: Response) => {
     .json(new ApiResponse(200, {}, "Reset password successfully"));
 });
 
-const verifyUserEmailRequest = asyncHandler(
+const sendVerifyEmailRequest = asyncHandler(
   async (req: Request, res: Response) => {
     const user = await db.query.users.findFirst({
       where: x.eq(users.id, req.user?.id),
@@ -537,5 +537,5 @@ export {
   forgotPassword,
   resetPassword,
   verifyEmail,
-  verifyUserEmailRequest,
+  sendVerifyEmailRequest,
 };
