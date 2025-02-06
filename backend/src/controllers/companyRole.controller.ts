@@ -94,7 +94,7 @@ const updateCompanyRole = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(400, "Company role id is missing or invalid");
   }
 
-  const companyRole = await db
+  const updateCompanyRole = await db
     .update(companyRoles)
     .set({
       name: parserData.data.name,
@@ -105,7 +105,7 @@ const updateCompanyRole = asyncHandler(async (req: Request, res: Response) => {
         : undefined
     )
     .returning();
-  if (!companyRole) {
+  if (!updateCompanyRole) {
     throw new ApiError(
       500,
       "Company role not update due to an internal server error"
@@ -115,7 +115,11 @@ const updateCompanyRole = asyncHandler(async (req: Request, res: Response) => {
   return res
     .status(200)
     .json(
-      new ApiResponse(200, companyRole, "Update company role successfully")
+      new ApiResponse(
+        200,
+        updateCompanyRole,
+        "Update company role successfully"
+      )
     );
 });
 
