@@ -4,6 +4,7 @@ import { timestamp } from "../utils/helpers";
 import { relations } from "drizzle-orm";
 import { textTestimonials } from "./textTestimonial.schema";
 import { videoTestimonials } from "./videoTestimonial.schema";
+import { companyRoles } from "./companyRole.schema";
 
 export const users = table(
   "users",
@@ -43,5 +44,6 @@ export const userTableRelations = relations(users, ({ many }) => {
   return {
     textTestimonials: many(textTestimonials),
     videoTestimonials: many(videoTestimonials),
+    companyRoles: many(companyRoles),
   };
 });
