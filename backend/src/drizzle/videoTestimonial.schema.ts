@@ -13,8 +13,8 @@ export const videoTestimonials = table(
     company: t.varchar("company", { length: 20 }),
     avatar: t.varchar("avatar").default(""),
     socialLink: t.varchar("social_link"),
-    testimonial: t.varchar("video").notNull(),
-    role: t.varchar("role"),
+    video: t.varchar("video").notNull(),
+    companyRole: t.varchar("company_role"),
     ownerId: t
       .uuid("owner_id")
       .references(() => users.id)
