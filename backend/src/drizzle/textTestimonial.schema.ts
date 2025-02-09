@@ -15,7 +15,7 @@ export const textTestimonials = table(
     testimonialTitle: t.varchar("testimonial_title", { length: 100 }).notNull(),
     testimonial: t.varchar("testimonial", { length: 250 }).notNull(),
     socialLink: t.varchar("social_link"),
-    role: t.varchar("role"),
+    companyRole: t.varchar("company_role").notNull(),
     ownerId: t
       .uuid("owner_id")
       .references(() => users.id)
