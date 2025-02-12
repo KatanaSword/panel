@@ -25,7 +25,7 @@ const createTextTestimonialSchema = z.object({
     .max(100, {
       message: "Testimonial title can't be more than 100 characters long",
     }),
-  role: z.enum([""]).optional(),
+  companyRole: z.string(),
 });
 
 const updateTextTestimonialSchema = z.object({
@@ -57,7 +57,7 @@ const updateTextTestimonialSchema = z.object({
       message: "Testimonial title can't be more than 100 characters long",
     })
     .optional(),
-  role: z.enum([""]).optional(),
+  companyRole: z.string().optional(),
 });
 
 const avatarSchema = z.object({
