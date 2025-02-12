@@ -15,7 +15,7 @@ const createVideoTestimonialSchema = z.object({
     })
     .optional(),
   email: z.string().email({ message: "Invalid email" }),
-  role: z.enum([""]).optional(),
+  companyRole: z.string(),
 });
 
 const updateVideoTestimonialSchema = z.object({
@@ -35,30 +35,30 @@ const updateVideoTestimonialSchema = z.object({
     })
     .optional(),
   email: z.string().email({ message: "Invalid email" }).optional(),
-  role: z.enum([""]).optional(),
+  companyRole: z.string().optional(),
 });
 
-const testimonialSchema = z.object({
-  testimonial: z.string(),
+const videoSchema = z.object({
+  video: z.string(),
 });
 
 const avatarSchema = z.object({
   avatar: z.string(),
 });
 
-const updateTestimonialSchema = z.object({
-  testimonial: z.string().optional(),
+const updateVideoSchema = z.object({
+  video: z.string().optional(),
 });
 
 const videoTestimonialIdSchema = z.object({
-  VideoTestimonialId: z.string(),
+  videoTestimonialId: z.string(),
 });
 
 export {
   createVideoTestimonialSchema,
   updateVideoTestimonialSchema,
-  testimonialSchema,
+  videoSchema,
   avatarSchema,
-  updateTestimonialSchema,
+  updateVideoSchema,
   videoTestimonialIdSchema,
 };
