@@ -20,7 +20,7 @@ const router = Router();
 router.route("/signup").post(userRegister);
 router.route("/signin").post(signInUser);
 router.route("/refresh_token").post(refreshAccessToken);
-router.route("/forhot_password").post(forgotPassword);
+router.route("/forgot_password").post(forgotPassword);
 router.route("/reset_password/:resetToken").post(resetPassword);
 
 // Secure routes
