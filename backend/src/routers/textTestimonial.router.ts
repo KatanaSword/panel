@@ -8,21 +8,23 @@ import {
   updateTextTestimonial,
 } from "../controllers/textTestimonial.controller";
 import { verifyJWT } from "../middlewares/auth.middleware";
-import { upload } from "../middlewares/multer.middleware";
+import { imageUpload } from "../middlewares/multer.middleware";
 
 const router = Router();
 
+router.use(verifyJWT);
+
 router
   .route("/")
-  .get(verifyJWT, getAllTextTestimonials)
-  .post(verifyJWT, upload.single("avatar"), createTextTestimonial);
+  .get(getAllTextTestimonials)
+  .post(imageUpload.single("avatar"), createTextTestimonial);
 router
   .route("/update_avatar/:textTestimonialId")
-  .patch(verifyJWT, upload.single("avatar"), updateAvatar);
+  .patch(imageUpload.single("avatar"), updateAvatar);
 router
   .route("/:textTestimonialId")
-  .get(verifyJWT, getTextTestimonialById)
-  .patch(verifyJWT, updateTextTestimonial)
-  .delete(verifyJWT, deleteTextTestimonial);
+  .get(getTextTestimonialById)
+  .patch(updateTextTestimonial)
+  .delete(deleteTextTestimonial);
 
 export default router;
