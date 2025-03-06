@@ -1,0 +1,12 @@
+export { SignupSVG } from "./signup";
+export { GithubSVG } from "./github";
+export { SunSVG } from "./sun";
+export { MoonSVG } from "./moon";
+export { AngleRightSVG } from "./angleRight";
+export { DiscordSVG } from "./discord";
+export { HashnodeSVG } from "./hashnode";
+export { LinkedinSVG } from "./linkedin";
+export { XSVG } from "./x";
+export { YoutubeSVG } from "./youtube";
+export { EmailSVG } from "./email";
+export { StarSVG } from "./star";
