@@ -1,4 +1,4 @@
-import { AngleRightSVG, StarOfLifeSVG } from "@/assets/images";
+import { AngleRightSVG, ArrowRightSVG, StarOfLifeSVG } from "@/assets/images";
 import { Footer, Header, Text, Line } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,7 +7,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { FAQ, PricingPoint } from "@/type";
+import { FAQ, PricingPoint, Testimonials } from "@/type";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -17,6 +17,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { GridItem } from "@/components/ui/glowing-effect";
+import { Box, Lock, Search, Settings, Sparkles } from "lucide-react";
+import { InfiniteMovingCards } from "@/components/ui/infinite-moving-cards";
 
 const HomepagePage = () => {
   const faqs: FAQ[] = [
@@ -75,11 +78,41 @@ const HomepagePage = () => {
     },
   ];
 
+  const testimonials: Testimonials[] = [
+    {
+      logo: "https://www.adaptivewfs.com/wp-content/uploads/2020/07/logo-placeholder-image.png",
+      company: "loom",
+      review:
+        "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Nulla, nostrum? Similique ipsam, nam necessitatibus vero voluptate ab totam maiores in,",
+      star: "",
+      name: "Saurabh Tajane",
+      occupation: "Head of Engineering",
+    },
+    {
+      logo: "https://www.adaptivewfs.com/wp-content/uploads/2020/07/logo-placeholder-image.png",
+      company: "loom",
+      review:
+        "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Nulla, nostrum? Similique ipsam, nam necessitatibus vero voluptate ab totam maiores in,",
+      star: "",
+      name: "Saurabh Tajane",
+      occupation: "Head of Engineering",
+    },
+    {
+      logo: "https://www.adaptivewfs.com/wp-content/uploads/2020/07/logo-placeholder-image.png",
+      company: "loom",
+      review:
+        "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Nulla, nostrum? Similique ipsam, nam necessitatibus vero voluptate ab totam maiores in,",
+      star: "",
+      name: "Saurabh Tajane",
+      occupation: "Head of Engineering",
+    },
+  ];
+
   return (
     <div className="flex w-full flex-col items-center justify-center bg-black-B800">
       <Header />
-      <div className="w-[1280px]">
-        <section className="my-[50px] flex flex-col items-center justify-center gap-[20px] px-[75px]">
+      <main className="w-[1280px]">
+        <section className="my-[100px] flex flex-col items-center justify-center gap-[20px] px-[75px]">
           <div className="flex flex-row items-center gap-1 rounded-[50px] border-2 border-walnut_brown-W700 bg-gradient">
             <Text
               className="rounded-[50px] bg-white px-2 text-black-B900"
@@ -129,11 +162,111 @@ const HomepagePage = () => {
           >
             Start for free today
           </Button>
-          <div className="my-[50px] flex w-full justify-center">
+          <div className="my-[100px] flex w-full justify-center">
             <div className="h-[450px] w-[80%] rounded-xl bg-white shadow-video_box_shadow"></div>
           </div>
         </section>
-        <section className="my-[50px] flex flex-col items-center justify-center gap-[20px] px-[75px]">
+        <section className="my-[100px] flex flex-col items-center justify-center gap-[20px] px-[75px]">
+          <div className="flex items-center justify-center gap-2">
+            <div className="rounded-full bg-orange-O400 p-2">
+              <StarOfLifeSVG width="14px" height="14px" />
+            </div>
+            <Text className="text-base tracking-[-0.50px] text-orange-O400">
+              How it works
+            </Text>
+          </div>
+          <Text
+            className="w-[500px] bg-h2_gradient bg-clip-text text-center text-4xl font-black tracking-[-0.50px] text-transparent"
+            as="h2"
+          >
+            Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+          </Text>
+          <ul className="lg:gap-4 mt-[50px] grid max-h-[34rem] grid-cols-1 grid-rows-2 gap-4 md:grid-cols-12 md:grid-rows-3">
+            <GridItem
+              area="md:[grid-area:1/1/2/7] [grid-area:1/1/2/5]"
+              icon={
+                <Box className="h-8 w-8 text-orange-O300 dark:text-neutral-400" />
+              }
+              title="Do things the right way"
+              description="Running out of copy so I'll write anything."
+            />
+
+            <GridItem
+              area="md:[grid-area:1/7/2/13] [grid-area:2/1/3/5]"
+              icon={
+                <Settings className="h-8 w-8 text-orange-O300 dark:text-neutral-400" />
+              }
+              title="The best AI code editor ever."
+              description="Yes, it's true. I'm not even kidding. Ask my mom if you don't believe me."
+            />
+
+            <GridItem
+              area="md:[grid-area:2/1/3/7] [grid-area:1/5/3/8]"
+              icon={
+                <Lock className="h-8 w-8 text-orange-O300 dark:text-neutral-400" />
+              }
+              title="You should buy Aceternity UI Pro"
+              description="It's the best money you'll ever spend"
+            />
+
+            <GridItem
+              area="md:[grid-area:2/7/3/13] [grid-area:1/8/2/13]"
+              icon={
+                <Sparkles className="h-8 w-8 text-orange-O300 dark:text-neutral-400" />
+              }
+              title="This card is also built by Cursor"
+              description="I'm not even kidding. Ask my mom if you don't believe me."
+            />
+
+            <GridItem
+              area="md:[grid-area:3/1/4/13] [grid-area:2/8/3/13]"
+              icon={
+                <Search className="h-8 w-8 text-orange-O300 dark:text-neutral-400" />
+              }
+              title="Coming soon on Aceternity UI"
+              description="I'm writing the code as I record this, no shit."
+            />
+          </ul>
+        </section>
+        <section className="my-[100px] flex flex-col items-center justify-center gap-[20px] px-[75px]">
+          <div className="flex items-center justify-center gap-[30px]">
+            <div className="flex w-[500px] flex-col justify-start gap-[20px]">
+              <div className="flex items-center justify-start gap-2">
+                <div className="w-[30px] rounded-full bg-orange-O400 p-2">
+                  <StarOfLifeSVG width="14px" height="14px" />
+                </div>
+                <Text className="text-orange-O400">Customer Story</Text>
+              </div>
+              <Text
+                className="w-auto bg-h2_gradient bg-clip-text text-4xl font-black tracking-[-0.50px] text-transparent"
+                as="h2"
+              >
+                Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+              </Text>
+              <div className="mt-[30px] flex items-center justify-start gap-[6px]">
+                <Text className="text-gray-G400">Read the story</Text>
+                <div className="flex h-[20px] w-[20px] items-center rounded-full border border-gray-G400 bg-black-B800 p-1">
+                  <ArrowRightSVG
+                    width="14px"
+                    height="14px"
+                    fillColor="#acacac"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="h-[300px] w-[400px] rounded-xl bg-white"></div>
+          </div>
+          <div className="flex w-full items-center justify-between gap-[20px]">
+            <div className="dark:bg-black dark:bg-grid-white/[0.05] relative flex flex-col items-center justify-center overflow-hidden rounded-md antialiased">
+              <InfiniteMovingCards
+                items={testimonials}
+                direction="right"
+                speed="slow"
+              />
+            </div>
+          </div>
+        </section>
+        <section className="my-[100px] flex flex-col items-center justify-center gap-[20px] px-[75px]">
           <div className="flex items-center justify-center gap-2">
             <div className="rounded-full bg-orange-O400 p-2">
               <StarOfLifeSVG width="18px" height="18px" />
@@ -143,7 +276,7 @@ const HomepagePage = () => {
             </Text>
           </div>
           <Text
-            className="bg-faq_answers_gradient bg-clip-text text-4xl font-black tracking-[-0.50px] text-transparent"
+            className="bg-h2_gradient bg-clip-text text-4xl font-black tracking-[-0.50px] text-transparent"
             as="h2"
           >
             We've got the answers
@@ -161,7 +294,7 @@ const HomepagePage = () => {
             ))}
           </Accordion>
         </section>
-        <section className="my-[50px] flex flex-col items-center justify-center gap-[20px] px-[75px]">
+        <section className="my-[100px] flex flex-col items-center justify-center gap-[20px] px-[75px]">
           <div className="flex items-center justify-center gap-2">
             <div className="rounded-full bg-orange-O400 p-2">
               <StarOfLifeSVG width="18px" height="18px" />
@@ -171,7 +304,7 @@ const HomepagePage = () => {
             </Text>
           </div>
           <Text
-            className="bg-faq_answers_gradient bg-clip-text text-4xl font-black tracking-[-0.50px] text-transparent"
+            className="bg-h2_gradient bg-clip-text text-4xl font-black tracking-[-0.50px] text-transparent"
             as="h2"
           >
             Profitable Pricing Plan
@@ -208,7 +341,7 @@ const HomepagePage = () => {
                     <CardTitle className="mb-3 w-[64px] rounded-full bg-orange-O400 px-4 py-2 text-white">
                       Free
                     </CardTitle>
-                    <CardDescription className="text-base">
+                    <CardDescription className="text-base text-gray-G400">
                       Make changes to your monthly here. Click save when you're
                       done.
                     </CardDescription>
@@ -275,7 +408,7 @@ const HomepagePage = () => {
                     <CardTitle className="mb-3 w-[90px] text-nowrap rounded-full bg-orange-O400 px-4 py-2 text-white">
                       Pro Plus
                     </CardTitle>
-                    <CardDescription className="text-base">
+                    <CardDescription className="text-base text-gray-G400">
                       Make changes to your monthly here. Click save when you're
                       done.
                     </CardDescription>
@@ -316,7 +449,7 @@ const HomepagePage = () => {
                     <CardTitle className="mb-3 w-[64px] rounded-full bg-orange-O400 px-4 py-2 text-white">
                       Free
                     </CardTitle>
-                    <CardDescription className="text-base">
+                    <CardDescription className="text-base text-gray-G400">
                       Make changes to your monthly here. Click save when you're
                       done.
                     </CardDescription>
@@ -383,7 +516,7 @@ const HomepagePage = () => {
                     <CardTitle className="mb-3 w-[90px] text-nowrap rounded-full bg-orange-O400 px-4 py-2 text-white">
                       Pro Plus
                     </CardTitle>
-                    <CardDescription className="text-base">
+                    <CardDescription className="text-base text-gray-G400">
                       Make changes to your monthly here. Click save when you're
                       done.
                     </CardDescription>
@@ -418,7 +551,7 @@ const HomepagePage = () => {
             </Tabs>
           </div>
         </section>
-      </div>
+      </main>
       <Footer />
     </div>
   );
