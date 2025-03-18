@@ -20,15 +20,48 @@ export type ImageProps = React.ImgHTMLAttributes<HTMLImageElement> & {
 };
 
 export type TextProps = {
-  children: string;
+  children: React.ReactNode;
   className?: string;
   size?: string | number;
-  as?: "span" | "p";
+  as?: "span" | "p" | "h1" | "h2" | "h3";
 };
 
 export type SVGProps = React.SVGProps<SVGSVGElement> & {
-  fillColor: string;
+  fillColor?: string;
   className?: string;
   height: number | string;
   width: number | string;
+};
+
+export type FAQ = {
+  id: number;
+  question: string;
+  answer: string;
+};
+
+export type PricingPoint = {
+  id: number;
+  point: string;
+};
+
+export type Testimonials = {
+  logo: string;
+  company: string;
+  review: string;
+  star: React.ReactNode;
+  name: string;
+  occupation: string;
+};
+
+export type Theme = "dark" | "light" | "system";
+
+export type ThemeProviderProps = {
+  children: React.ReactNode;
+  defaultTheme?: Theme;
+  storageKey?: string;
+};
+
+export type ThemeProviderState = {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
 };
