@@ -1,3 +1,5 @@
+// React Component Type
+
 export type ErrorMessageProps = React.HTMLAttributes<HTMLDivElement> & {
   className?: string;
   errors: string | string[];
@@ -64,4 +66,20 @@ export type ThemeProviderProps = {
 export type ThemeProviderState = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
+};
+
+// Auth Slice Type
+
+export type InitialState = {
+  status: boolean;
+  userData: null;
+};
+
+// ENV Config Type
+
+export type Config = {
+  backendUserUrl: string;
+  backendCompanyRoleUrl: string;
+  backendTextTestimonialUrl: string;
+  backendVideoTestimonialUrl: string;
 };
