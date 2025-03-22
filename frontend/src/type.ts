@@ -83,3 +83,103 @@ export type Config = {
   backendTextTestimonialUrl: string;
   backendVideoTestimonialUrl: string;
 };
+
+// Auth Type
+
+export interface Register {
+  username: string;
+  email: string;
+  password: string;
+  role?: string;
+}
+
+export interface Signin {
+  username?: string;
+  email?: string;
+  password: string;
+}
+
+export interface AccountDetailUpdate {
+  phoneNumber?: number;
+  countryCode?: string;
+  fullName?: string;
+}
+
+export interface AssignRole {
+  userId: string;
+  role: string;
+}
+
+export interface ChangePassword {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ResetPassword {
+  token: string;
+  resetPassword: string;
+}
+
+// Company Role Type
+
+export interface UpdateCompanyRole {
+  name?: string;
+  companyRoleId: string;
+}
+
+// Text Testimonial Type
+
+export interface CreateTextTestimonial {
+  fullName: string;
+  email: string;
+  company: string;
+  title: string;
+  review: string;
+  companyRole: string;
+  socialLink?: string;
+}
+
+export interface UpdateTextTestimonial {
+  fullName?: string;
+  email?: string;
+  company?: string;
+  title?: string;
+  review?: string;
+  socialLink?: string;
+  companyRole?: string;
+}
+
+export interface UpdateAvatar {
+  textTestimonialId: string;
+  avatar: string;
+}
+
+// Video Testimonial Type
+
+export interface CreateVideoTestimonial {
+  fullName: string;
+  email: string;
+  company: string;
+  companyRole: string;
+  avatar: string;
+  video: string;
+  socialLink?: string;
+}
+
+export interface UpdateVideoTestimonial {
+  fullName?: string;
+  email?: string;
+  company?: string;
+  socialLink?: string;
+  companyRole?: string;
+}
+
+export interface UpdateAvatar {
+  videoTestimonialId: string;
+  avatar: string;
+}
+
+export interface UpdateVideo {
+  videoTestimonialId: string;
+  video: string;
+}
